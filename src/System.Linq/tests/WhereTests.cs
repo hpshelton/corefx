@@ -680,59 +680,6 @@ namespace System.Linq.Tests
             Assert.Equal(2, enumerator.Current);
         }
 
-        /// <summary>
-        /// Test enumerator - returns int values from 1 to 5 inclusive.
-        /// </summary>
-        private class TestEnumerator : IEnumerable<int>, IEnumerator<int>
-        {
-            private int _current = 0;
-
-            public virtual int Current { get { return _current; } }
-
-            object IEnumerator.Current { get { return Current; } }
-
-            public void Dispose() { }
-
-            public virtual IEnumerator<int> GetEnumerator()
-            {
-                return this;
-            }
-
-            public virtual bool MoveNext()
-            {
-                return _current++ < 5;
-            }
-
-            public void Reset()
-            {
-                throw new NotImplementedException();
-            }
-
-            IEnumerator IEnumerable.GetEnumerator()
-            {
-                return GetEnumerator();
-            }
-        }
-
-        /// <summary>
-        /// A test enumerator that throws an InvalidOperationException when invoking Current after MoveNext has been called exactly once.
-        /// </summary>
-        private class ThrowsOnCurrentEnumerator : TestEnumerator
-        {
-            public override int Current
-            {
-                get
-                {
-                    var current = base.Current;
-                    if (current == 1)
-                    {
-                        throw new InvalidOperationException();
-                    }
-                    return current;
-                }
-            }
-        }
-
         [Fact]
         public void Where_SourceThrowsOnCurrent()
         {
@@ -748,28 +695,11 @@ namespace System.Linq.Tests
             Assert.True(enumerator.MoveNext());
             Assert.Equal(2, enumerator.Current);
         }
-
-        /// <summary>
-        /// A test enumerator that throws an InvalidOperationException when invoking MoveNext after MoveNext has been called exactly once.
-        /// </summary>
-        private class ThrowsOnMoveNext : TestEnumerator
-        {
-            public override bool MoveNext()
-            {
-                bool baseReturn = base.MoveNext();
-                if (base.Current == 1)
-                {
-                    throw new InvalidOperationException();
-                }
-
-                return baseReturn;
-            }
-        }
-
+        
         [Fact]
         public void Where_SourceThrowsOnMoveNext()
         {
-            IEnumerable<int> source = new ThrowsOnMoveNext();
+            IEnumerable<int> source = new ThrowsOnMoveNextEnumerator();
             Func<int, bool> truePredicate = (value) => true;
 
             var enumerator = source.Where(truePredicate).GetEnumerator();
@@ -785,25 +715,7 @@ namespace System.Linq.Tests
             Assert.True(enumerator.MoveNext());
             Assert.Equal(2, enumerator.Current);
         }
-
-        /// <summary>
-        /// A test enumerator that throws an InvalidOperationException when GetEnumerator is called for the first time.
-        /// </summary>
-        private class ThrowsOnGetEnumerator : TestEnumerator
-        {
-            private int getEnumeratorCallCount;
-
-            public override IEnumerator<int> GetEnumerator()
-            {
-                if (getEnumeratorCallCount++ == 0)
-                {
-                    throw new InvalidOperationException();
-                }
-
-                return base.GetEnumerator();
-            }
-        }
-
+        
         [Fact]
         public void Where_SourceThrowsOnGetEnumerator()
         {

@@ -450,45 +450,11 @@ namespace System.Linq.Tests
             enumerator.MoveNext();
             Assert.Equal(3 /* 2 + 1 */, enumerator.Current);
         }
-
-        /// <summary>
-        /// Test enumerator - returns int values from 1 to 5 included.
-        /// </summary>
-        private class TestEnumerator : IEnumerable<int>, IEnumerator<int>
-        {
-            private int _current = 0;
-
-            public virtual int Current { get { return _current; } }
-
-            object IEnumerator.Current { get { return Current; } }
-
-            public void Dispose() { }
-
-            public virtual IEnumerator<int> GetEnumerator()
-            {
-                return this;
-            }
-
-            public virtual bool MoveNext()
-            {
-                return _current++ < 5;
-            }
-
-            public void Reset()
-            {
-                throw new NotImplementedException();
-            }
-
-            IEnumerator IEnumerable.GetEnumerator()
-            {
-                return GetEnumerator();
-            }
-        }
-
+        
         [Fact]
         public void Select_ExceptionThrownFromCurrentOfSourceIterator_ExceptionPropagatedToTheCaller()
         {
-            IEnumerable<int> source = new ThrowsOnCurrent();
+            IEnumerable<int> source = new ThrowsOnCurrentEnumerator();
             Func<int, int> selector = i => i + 1;
 
             var result = source.Select(selector);
@@ -500,7 +466,7 @@ namespace System.Linq.Tests
         [Fact]
         public void Select_ExceptionThrownFromCurrentOfSourceIterator_IteratorCanBeUsedAfterExceptionIsCaught()
         {
-            IEnumerable<int> source = new ThrowsOnCurrent();
+            IEnumerable<int> source = new ThrowsOnCurrentEnumerator();
             Func<int, int> selector = i => i + 1;
 
             var result = source.Select(selector);
@@ -511,27 +477,10 @@ namespace System.Linq.Tests
             Assert.Equal(3 /* 2 + 1 */, enumerator.Current);
         }
 
-        /// <summary>
-        /// Test enumerator - throws InvalidOperationException from Current after MoveNext called once.
-        /// </summary>
-        private class ThrowsOnCurrent : TestEnumerator
-        {
-            public override int Current
-            {
-                get
-                {
-                    var current = base.Current;
-                    if (current == 1)
-                        throw new InvalidOperationException();
-                    return current;
-                }
-            }
-        }
-
         [Fact]
         public void Select_ExceptionThrownFromMoveNextOfSourceIterator_ExceptionPropagatedToTheCaller()
         {
-            IEnumerable<int> source = new ThrowsOnMoveNext();
+            IEnumerable<int> source = new ThrowsOnMoveNextEnumerator();
             Func<int, int> selector = i => i + 1;
 
             var result = source.Select(selector);
@@ -543,7 +492,7 @@ namespace System.Linq.Tests
         [Fact]
         public void Select_ExceptionThrownFromMoveNextOfSourceIterator_IteratorCanBeUsedAfterExceptionIsCaught()
         {
-            IEnumerable<int> source = new ThrowsOnMoveNext();
+            IEnumerable<int> source = new ThrowsOnMoveNextEnumerator();
             Func<int, int> selector = i => i + 1;
 
             var result = source.Select(selector);
@@ -552,21 +501,6 @@ namespace System.Linq.Tests
             Assert.Throws<InvalidOperationException>(() => enumerator.MoveNext());
             enumerator.MoveNext();
             Assert.Equal(3 /* 2 + 1 */, enumerator.Current);
-        }
-
-        /// <summary>
-        /// Test enumerator - throws InvalidOperationException on first call to MoveNext.
-        /// </summary>
-        private class ThrowsOnMoveNext : TestEnumerator
-        {
-            public override bool MoveNext()
-            {
-                bool baseReturn = base.MoveNext();
-                if (base.Current == 1)
-                    throw new InvalidOperationException();
-
-                return baseReturn;
-            }
         }
 
         [Fact]
@@ -597,22 +531,7 @@ namespace System.Linq.Tests
             Assert.True(enumerator.MoveNext());
             Assert.Equal("1", enumerator.Current);
         }
-
-        /// <summary>
-        /// Test enumerator - throws InvalidOperationException from GetEnumerator when called for the first time.
-        /// </summary>
-        private class ThrowsOnGetEnumerator : TestEnumerator
-        {
-            private int getEnumeratorCallCount;
-            public override IEnumerator<int> GetEnumerator()
-            {
-                if (getEnumeratorCallCount++ == 0)
-                    throw new InvalidOperationException();
-
-                return base.GetEnumerator();
-            }
-        }
-
+        
         [Fact]
         public void Select_SourceListGetsModifiedDuringIteration_ExceptionIsPropagated()
         {
